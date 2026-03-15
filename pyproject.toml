@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ts_triage"
+version = "0.1.0"
+description = "Lightweight Python library for automatic time series model selection and hyperparameter inference"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.23",
+    "scipy>=1.9",
+    "statsmodels>=0.14",
+    "pandas>=1.5",
+]
+
+[project.optional-dependencies]
+prophet = ["prophet>=1.1"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ts_triage*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
