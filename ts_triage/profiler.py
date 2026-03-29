@@ -56,12 +56,15 @@ def compute(y_series, m: int) -> TSProfile:
     stl_period = max(2, dominant_period)
     seasonality_strength, trend_strength = _compute_stl(y_filled, stl_period, n)
 
-    # ---- variance type — O(n) rolling corr ----------------------------------
+    # ---- rolling stats — O(n) — one pass ------------------------------------
     win = max(2, m)
-    variance_type = _compute_variance_type(y_filled, win)
+    rmean, rstd = _rolling_stats(y_filled, win)
+
+    # ---- variance type — O(n) rolling corr ----------------------------------
+    variance_type = _compute_variance_type(rmean, rstd)
 
     # ---- trend instability — O(n) -------------------------------------------
-    trend_instability = _compute_trend_instability(y_filled, win)
+    trend_instability = _compute_trend_instability(rmean)
 
     # ---- Croston demand metrics — O(n) --------------------------------------
     p_interdemand, cv2_demand = _compute_demand_metrics(y)
@@ -198,9 +201,8 @@ def _rolling_stats(y: np.ndarray, window: int) -> tuple[np.ndarray, np.ndarray]:
     return np.concatenate([pad, rmean]), np.concatenate([pad, rstd])
 
 
-def _compute_variance_type(y: np.ndarray, m: int) -> str:
+def _compute_variance_type(rmean: np.ndarray, rstd: np.ndarray) -> str:
     """'mul' if Pearson corr(rolling_std, rolling_mean) > 0.7, else 'add'."""
-    rmean, rstd = _rolling_stats(y, m)
     valid = ~(np.isnan(rmean) | np.isnan(rstd))
     if valid.sum() < 3:
         return "add"
@@ -208,9 +210,8 @@ def _compute_variance_type(y: np.ndarray, m: int) -> str:
     return "mul" if corr > 0.7 else "add"
 
 
-def _compute_trend_instability(y: np.ndarray, m: int) -> float:
+def _compute_trend_instability(rmean: np.ndarray) -> float:
     """Ratio of sign-changes in diff(rolling_mean)."""
-    rmean, _ = _rolling_stats(y, m)
     rm = rmean[~np.isnan(rmean)]
     if len(rm) < 3:
         return 0.0
