@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ts_triage.models import _fit_naive, _fit_croston, _croston_fit
+from ts_triage.models import _fit_naive, _fit_croston, _croston_fit, fit_and_forecast
 from ts_triage.schemas import ModelParams, ModelRecommendation
 
 
@@ -124,3 +124,48 @@ class TestETSFitSmoke:
         fitted, forecast, aic = _fit_ets(y, params, horizon=3)
         # Should fall back to additive internally without raising
         assert fitted is not None
+
+
+class TestFitAndForecast:
+    """Tests for the main fit_and_forecast entry point and its fallback mechanism."""
+
+    def test_fallback_to_naive_on_unknown_model(self):
+        y = _monthly(n=20)
+        rec = ModelRecommendation(
+            model="unknown_model_type",
+            variant="last",
+            confidence=0.0,
+            fallback="naive"
+        )
+        params = ModelParams()
+        # Should NOT raise ValueError, but log a warning and return naive forecast
+        model, forecast, aic = fit_and_forecast(y, rec, params, horizon=5)
+
+        assert model is None
+        assert aic is None
+        assert forecast is not None
+        assert len(forecast) == 5
+        # Naive "last" variant should be used
+        assert np.allclose(forecast.values, float(y.iloc[-1]))
+
+    def test_fallback_to_naive_on_exception(self, monkeypatch):
+        from ts_triage.models import _fit_ets
+        y = _monthly(n=20)
+        rec = ModelRecommendation(
+            model="ets",
+            variant="ANN",
+            confidence=1.0,
+            fallback="naive"
+        )
+        params = ModelParams(error="add", trend=None, seasonal=None)
+
+        def mock_fit_ets_fail(*args, **kwargs):
+            raise RuntimeError("ETS fit exploded")
+
+        monkeypatch.setattr("ts_triage.models._fit_ets", mock_fit_ets_fail)
+
+        # Should catch RuntimeError and fall back to naive
+        model, forecast, aic = fit_and_forecast(y, rec, params, horizon=3)
+        assert model is None
+        assert forecast is not None
+        assert len(forecast) == 3
