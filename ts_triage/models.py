@@ -61,15 +61,16 @@ def _fit_naive(
     variant: str,
     horizon: Optional[int],
 ) -> tuple[None, Optional[pd.Series], None]:
-    forecast = None
-    if horizon and horizon > 0:
-        if variant == "last":
-            val = float(y.dropna().iloc[-1]) if not y.dropna().empty else 0.0
-        else:  # 'mean'
-            val = float(y.dropna().mean()) if not y.dropna().empty else 0.0
+    if not (horizon and horizon > 0):
+        return None, None, None
 
-        future_index = _future_index(y, horizon)
-        forecast = pd.Series(np.full(horizon, val), index=future_index, name="forecast")
+    if variant == "last":
+        val = float(y.dropna().iloc[-1]) if not y.dropna().empty else 0.0
+    else:  # 'mean'
+        val = float(y.dropna().mean()) if not y.dropna().empty else 0.0
+
+    future_index = _future_index(y, horizon)
+    forecast = pd.Series(np.full(horizon, val), index=future_index, name="forecast")
 
     return None, forecast, None
 
