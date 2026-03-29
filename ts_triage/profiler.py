@@ -180,7 +180,7 @@ def _compute_stl(y: np.ndarray, period: int, n: int) -> tuple[float, float]:
 
         return ss, ts
 
-    except Exception:
+    except ValueError:
         return 0.0, 0.0
 
 
