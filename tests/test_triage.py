@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
-import numpy as np
-import pandas as pd
-import pytest
 
 from ts_triage.schemas import TSProfile
 from ts_triage.triage import decide

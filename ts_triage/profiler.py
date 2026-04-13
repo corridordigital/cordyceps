@@ -11,7 +11,6 @@ Design constraints:
 from __future__ import annotations
 
 import warnings
-from typing import Optional
 
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
