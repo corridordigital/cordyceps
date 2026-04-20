@@ -75,8 +75,8 @@ def _infer_freq(y: pd.Series) -> Optional[str]:
             inferred = pd.infer_freq(y.index)
             if inferred:
                 return inferred
-        except Exception:
-            pass
+        except (ValueError, TypeError):
+            logger.debug("pandas.infer_freq failed", exc_info=True)
 
     # 3. Fallback: closest named period from median diff
     if len(y) >= 2:
