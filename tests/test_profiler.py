@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pandas as pd
 import pytest
 
-from ts_triage.profiler import compute, _fill_nan, _compute_spectral, _compute_demand_metrics
+from ts_triage.profiler import (
+    _compute_demand_metrics,
+    _compute_spectral,
+    _compute_variance_type,
+    _fill_nan,
+    compute,
+)
 
 
 class TestFillNan:
@@ -145,3 +153,37 @@ class TestComputeProfile:
         elapsed_ms = (time.perf_counter() - start) * 1000
         # Allow generous budget in CI
         assert elapsed_ms < 500, f"Profiling took {elapsed_ms:.1f}ms (budget 500ms)"
+
+
+class TestComputeVarianceType:
+    def test_too_few_points(self):
+        rmean = np.array([1.0, 2.0])
+        rstd = np.array([0.1, 0.2])
+        assert _compute_variance_type(rmean, rstd) == "add"
+
+    def test_high_correlation_mul(self):
+        # rstd is perfectly correlated with rmean
+        rmean = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        rstd = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
+        assert _compute_variance_type(rmean, rstd) == "mul"
+
+    def test_low_correlation_add(self):
+        # rstd and rmean are uncorrelated (or inversely correlated)
+        rmean = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        rstd = np.array([0.5, 0.4, 0.3, 0.2, 0.1])
+        assert _compute_variance_type(rmean, rstd) == "add"
+
+    def test_with_nans(self):
+        # Ensure NaNs are filtered and correlation is calculated on remaining points
+        rmean = np.array([np.nan, 1.0, 2.0, 3.0, np.nan])
+        rstd = np.array([np.nan, 0.1, 0.2, 0.3, 0.5])
+        # Points (1.0, 0.1), (2.0, 0.2), (3.0, 0.3) are perfectly correlated
+        assert _compute_variance_type(rmean, rstd) == "mul"
+
+    def test_constant_input_add(self):
+        # Constant rstd results in undefined correlation
+        rmean = np.array([1.0, 2.0, 3.0, 4.0])
+        rstd = np.array([0.1, 0.1, 0.1, 0.1])
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            assert _compute_variance_type(rmean, rstd) == "add"
