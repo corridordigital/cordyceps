@@ -43,6 +43,8 @@ _FREQ_TO_PERIOD: dict[str, int] = {
     "B": 5,    "BM": 12,
 }
 
+_SORTED_FREQ_KEYS = sorted(_FREQ_TO_PERIOD, key=len, reverse=True)
+
 
 def _freq_to_period(freq: str) -> int:
     """Map a pandas frequency alias to a default seasonal period."""
@@ -54,7 +56,7 @@ def _freq_to_period(freq: str) -> int:
     if base in _FREQ_TO_PERIOD:
         return _FREQ_TO_PERIOD[base]
     # Try prefix match
-    for key in sorted(_FREQ_TO_PERIOD, key=len, reverse=True):
+    for key in _SORTED_FREQ_KEYS:
         if base.upper().startswith(key.upper()):
             return _FREQ_TO_PERIOD[key]
     return 12   # safe default
