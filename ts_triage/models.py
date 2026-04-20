@@ -4,8 +4,6 @@ Thin fit/predict wrappers for the four candidate models.
 Prophet is lazy-imported: it is NEVER loaded unless it is the selected model.
 """
 
-from __future__ import annotations
-
 import logging
 import warnings
 from typing import Any, Optional
