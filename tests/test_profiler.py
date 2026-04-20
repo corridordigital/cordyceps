@@ -6,7 +6,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ts_triage.profiler import compute, _fill_nan, _compute_spectral, _compute_demand_metrics
+from ts_triage.profiler import (
+    compute,
+    _fill_nan,
+    _compute_spectral,
+    _compute_demand_metrics,
+    _compute_trend_instability,
+)
 
 
 class TestFillNan:
@@ -145,3 +151,27 @@ class TestComputeProfile:
         elapsed_ms = (time.perf_counter() - start) * 1000
         # Allow generous budget in CI
         assert elapsed_ms < 500, f"Profiling took {elapsed_ms:.1f}ms (budget 500ms)"
+
+
+class TestComputeTrendInstability:
+    def test_short_series_fallback(self):
+        # Less than 3 valid points
+        rmean = np.array([1.0, 2.0, np.nan])
+        assert _compute_trend_instability(rmean) == 0.0
+
+    def test_no_sign_changes(self):
+        rmean = np.array([1.0, 2.0, 3.0, 4.0])
+        assert _compute_trend_instability(rmean) == 0.0
+
+    def test_with_sign_changes(self):
+        # 1.0 -> 2.0 (diff 1.0, sign +1)
+        # 2.0 -> 1.0 (diff -1.0, sign -1) -> sign change 1
+        # 1.0 -> 2.0 (diff 1.0, sign +1)  -> sign change 2
+        rmean = np.array([1.0, 2.0, 1.0, 2.0])
+        # sign_changes = 2, len(rm) = 4, result = 0.5
+        assert _compute_trend_instability(rmean) == 0.5
+
+    def test_with_nans_short_series(self):
+        rmean = np.array([1.0, np.nan, 2.0, np.nan])
+        # Only 2 valid points -> fallback
+        assert _compute_trend_instability(rmean) == 0.0
