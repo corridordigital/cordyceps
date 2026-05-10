@@ -44,6 +44,7 @@ _FREQ_TO_PERIOD: dict[str, int] = {
 }
 
 _SORTED_FREQ_KEYS = sorted(_FREQ_TO_PERIOD, key=len, reverse=True)
+_SORTED_FREQ_TUPLES = list(zip(_SORTED_FREQ_KEYS, [k.upper() for k in _SORTED_FREQ_KEYS]))
 
 
 def _freq_to_period(freq: str) -> int:
@@ -56,8 +57,9 @@ def _freq_to_period(freq: str) -> int:
     if base in _FREQ_TO_PERIOD:
         return _FREQ_TO_PERIOD[base]
     # Try prefix match
-    for key in _SORTED_FREQ_KEYS:
-        if base.upper().startswith(key.upper()):
+    base_upper = base.upper()
+    for key, upper_key in _SORTED_FREQ_TUPLES:
+        if base_upper.startswith(upper_key):
             return _FREQ_TO_PERIOD[key]
     return 12   # safe default
 
