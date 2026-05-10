@@ -6,7 +6,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ts_triage.models import _fit_naive, _fit_croston, _croston_fit, fit_and_forecast
+from ts_triage.models import (
+    _croston_fit,
+    _fit_croston,
+    _fit_naive,
+    _infer_prophet_freq,
+    fit_and_forecast,
+)
 from ts_triage.schemas import ModelParams, ModelRecommendation
 
 
@@ -169,3 +175,27 @@ class TestFitAndForecast:
         assert model is None
         assert forecast is not None
         assert len(forecast) == 3
+
+
+class TestProphetFreqInference:
+    def test_explicit_freq(self):
+        y = pd.Series(
+            [1, 2, 3],
+            index=pd.date_range("2020-01-01", periods=3, freq="MS")
+        )
+        assert _infer_prophet_freq(y) == "MS"
+
+    def test_inferred_freq(self):
+        # Index without explicit freq but inferrable
+        idx = pd.to_datetime(["2020-01-01", "2020-01-02", "2020-01-03"])
+        y = pd.Series([1, 2, 3], index=idx)
+        assert y.index.freq is None
+        assert _infer_prophet_freq(y) == "D"
+
+    def test_fallback_freq(self):
+        # Irregular index that cannot be inferred
+        idx = pd.to_datetime(["2020-01-01", "2020-01-02", "2020-01-05"])
+        y = pd.Series([1, 2, 3], index=idx)
+        assert y.index.freq is None
+        # Prophet doesn't like None, so we expect "D"
+        assert _infer_prophet_freq(y) == "D"
