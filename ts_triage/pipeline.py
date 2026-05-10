@@ -10,8 +10,6 @@ Execution order
 5. [optional] models.fit_and_forecast(…)    # if fit=True
 """
 
-from __future__ import annotations
-
 import logging
 import warnings
 from typing import Any, Optional
