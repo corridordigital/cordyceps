@@ -46,7 +46,9 @@ def fit_and_forecast(
             return _fit_prophet(y, params, horizon)
         raise ValueError(f"Unknown model: {rec.model!r}")
     except Exception as exc:
-        logger.warning("Model fit failed (%s). Falling back to naive.", exc)
+        logger.warning(
+            "Model fit failed (%s). Falling back to naive.", type(exc).__name__
+        )
         return _fit_naive(y, "last", horizon)
 
 
