@@ -4,8 +4,6 @@ Infer near-optimal hyperparameters analytically from TSProfile.
 No grid search, no cross-validation, no model fitting at this stage.
 """
 
-from __future__ import annotations
-
 import numpy as np
 from typing import Optional
 
