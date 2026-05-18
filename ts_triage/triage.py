@@ -10,8 +10,6 @@ Rules applied in priority order:
 6. default              → ets
 """
 
-from __future__ import annotations
-
 from typing import Optional
 
 from .schemas import ModelRecommendation, TSProfile
