@@ -45,6 +45,17 @@ _FREQ_TO_PERIOD: dict[str, int] = {
 
 _SORTED_FREQ_KEYS = sorted(_FREQ_TO_PERIOD, key=len, reverse=True)
 
+_NS_FALLBACK = {
+    "S": 1e9,
+    "T": 60e9,
+    "H": 3600e9,
+    "D": 86400e9,
+    "W": 7 * 86400e9,
+    "M": 30.44 * 86400e9,
+    "Q": 91.31 * 86400e9,
+    "A": 365.25 * 86400e9,
+}
+
 
 def _freq_to_period(freq: str) -> int:
     """Map a pandas frequency alias to a default seasonal period."""
@@ -84,17 +95,7 @@ def _infer_freq(y: pd.Series) -> Optional[str]:
     if len(y) >= 2:
         diffs_ns = np.diff(y.index.asi8).astype(float)
         median_ns = float(np.median(diffs_ns))
-        _NS = {
-            "S": 1e9,
-            "T": 60e9,
-            "H": 3600e9,
-            "D": 86400e9,
-            "W": 7 * 86400e9,
-            "M": 30.44 * 86400e9,
-            "Q": 91.31 * 86400e9,
-            "A": 365.25 * 86400e9,
-        }
-        best = min(_NS.items(), key=lambda kv: abs(median_ns - kv[1]))
+        best = min(_NS_FALLBACK.items(), key=lambda kv: abs(median_ns - kv[1]))
         return best[0]
 
     return None
