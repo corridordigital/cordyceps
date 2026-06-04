@@ -24,6 +24,33 @@ def _monthly(n=60, seed=42):
 
 
 class TestNaiveModel:
+
+    def test_future_index_fallback(self):
+        # Create an irregular series where freq cannot be inferred
+        # Ensure we use ns resolution so asi8 returns nanoseconds
+        idx = pd.DatetimeIndex([
+            "2020-01-01",
+            "2020-01-02",
+            "2020-01-03",
+            "2020-01-04",
+            "2020-01-06", # break the pattern to fail infer_freq
+        ]).as_unit("ns")
+
+        y = pd.Series([1, 2, 3, 4, 5], index=idx)
+
+        # infer_freq should fail
+        assert pd.infer_freq(idx) is None
+
+        from ts_triage.models import _future_index
+        future_idx = _future_index(y, horizon=3)
+
+        assert len(future_idx) == 3
+        # Diffs: 1 day, 1 day, 1 day, 2 days. Median diff is 1 day.
+        # Last date is 2020-01-06. So next dates should be 7th, 8th, 9th.
+        assert future_idx[0] == pd.Timestamp("2020-01-07")
+        assert future_idx[1] == pd.Timestamp("2020-01-08")
+        assert future_idx[2] == pd.Timestamp("2020-01-09")
+
     def test_last_value_forecast(self):
         y = _monthly()
         _, forecast, aic = _fit_naive(y, "last", horizon=3)
