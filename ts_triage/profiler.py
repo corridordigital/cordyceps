@@ -8,7 +8,6 @@ Design constraints:
 - Every metric reuses arrays already in memory.
 """
 
-from __future__ import annotations
 
 import warnings
 
